@@ -1,0 +1,191 @@
+#!/usr/bin/env ruby
+#
+# SynCache dRuby object cache server
+# (originally written for Samizdat project)
+#
+#   Copyright (c) 2002-2009  Dmitry Borodaenko <angdraug@debian.org>
+#
+#   This program is free software.
+#   You can distribute/modify this program under the terms of
+#   the GNU General Public License version 3 or later.
+#
+# vim: et sw=2 sts=2 ts=8 tw=0
+
+require 'getoptlong'
+require 'etc'
+require 'syslog'
+require 'drb'
+require 'syncache'
+
+class SynCacheDRb
+  PNAME = 'syncache-drb'
+
+  def usage
+    puts %{
+Usage: #{PNAME} [ options ] [ URI ]
+
+Options:
+
+  URI
+      URI with druby: schema that DRb server binds to, default is
+      druby://localhost:9000
+
+  --help
+      display this message and quit
+
+  --ttl SECONDS
+      time-to-live value for cache entries, default is 24 hours
+
+  --size ENTRIES
+      maximum number of objects in cache, default is 10000
+
+  --flush-delay SECONDS
+      rate-limit flush operations: if less than that number of seconds
+      has passed since last flush, next flush will be delayed; default
+      is no rate limit
+
+  --user USER
+      Run as USER if started as root. Default is nobody.
+
+  --error-log ERROR_LOG_PATH
+      File to write errors to. Default is /dev/null. When run as root,
+      the file is chowned to USER:adm.
+
+  --pidfile PATH
+      Path to the pidfile. By default, pidfile is created under
+      /var/run/#{PNAME}/ when run as root, or under $TMPDIR
+      otherwise. Location should be writeable by USER.
+
+}
+    exit
+  end
+
+  def set_options
+    opts = GetoptLong.new(
+      [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+      [ '--ttl', '-t', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--size', '-s', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--flush-delay', '-f', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--user', '-u', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--error-log', '-e', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--pidfile', '-p', GetoptLong::REQUIRED_ARGUMENT ]
+    )
+
+    @uri = 'druby://localhost:9000'
+    @ttl = 24*60*60
+    @size = 10000
+    @flush_delay = nil
+    @user = 'nobody'
+    @error_log = '/dev/null'
+    @pidfile = (0 == Process.uid) ?
+      "/var/run/#{PNAME}/#{PNAME}.pid" :
+      (ENV.has_key?('TMPDIR') ? ENV['TMPDIR'] : '/tmp') + "/#{PNAME}.pid"
+
+    opts.each do |opt, arg|
+      case opt
+      when '--help'
+        usage
+      when '--ttl'
+        @ttl = arg.to_i
+      when '--size'
+        @size = arg.to_i
+      when '--flush-delay'
+        @flush_delay = arg.to_i
+      when '--user'
+        @user = arg.dup.untaint
+      when '--error-log'
+        @error_log = arg.dup.untaint
+      when '--pidfile'
+        @pidfile = arg
+      end
+    end
+
+    @uri = ARGV[0].dup.untaint if ARGV[0]
+    @user = Etc.getpwnam(@user)
+  end
+
+  def log(message, level = :info)
+    if @log.respond_to? level
+      @log.send(level, message)
+    else
+      STDERR << message << "\n"
+    end
+  end
+
+  def daemonize
+    $0 = PNAME
+    ENV.clear
+    exit if fork
+    Process.setsid
+    exit if fork
+    Dir.chdir '/'
+    File.umask 0022
+
+    STDIN.reopen '/dev/null'
+    STDOUT.reopen '/dev/null', 'a'
+    STDERR.reopen @error_log, 'a'
+
+    if 0 == Process.uid
+      if @error_log != '/dev/null'
+        File.chown(@user.uid, Etc.getgrnam('adm').gid, @error_log)
+        File.chmod(0640, @error_log)
+      end
+
+      # drop root priviledge
+      Process::Sys.setgid(@user.gid)
+      Process::Sys.setuid(@user.uid)
+    end
+
+    File.open(@pidfile, 'w') {|f| f.puts Process.pid }
+  end
+
+  def open_syslog
+    @log = Syslog.open PNAME
+  end
+
+  def ready
+    @cache = SynCache::Cache.new(@ttl, @size, @flush_delay)   # initialize cache
+  end
+
+  def trap_signals
+    shutdown = lambda do
+      DRb.stop_service
+    end
+    Signal.trap('INT', shutdown)
+    Signal.trap('TERM', shutdown)
+    Signal.trap('HUP') do   # kill -HUP to flush cache
+      @cache.flush
+      log.info 'cache flushed'
+    end
+  end
+
+  def start_service
+    $SAFE = 1
+    DRb.start_service(@uri, @cache)
+    log 'started'
+  end
+
+  def wait_for_shutdown
+    DRb.thread.join
+    File.delete @pidfile
+    log 'shut down'
+  end
+
+  def run
+    set_options
+    daemonize
+    open_syslog
+    begin
+      ready
+      trap_signals
+      start_service
+      wait_for_shutdown
+    rescue => error
+      log "#{error.class.to_s}: #{error.to_s}", :err
+      error.backtrace.each {|line| log('  ' + line, :err)  }
+      raise
+    end
+  end
+end
+
+SynCacheDRb.new.run

@@ -1,0 +1,41 @@
+.TH "SYNCACHE-DRB" "1" 
+.SH "NAME" 
+syncache-drb - SynCache dRuby object cache server
+.SH "SYNOPSIS" 
+.PP 
+\fBsyncache-drb\fP [ \fBoptions\fP ] [ \fBURI\fP ]
+.SH "DESCRIPTION" 
+.PP 
+\fBsyncache-drb\fP starts a Distributed Ruby server providing a
+SynCache::Cache object.
+.PP 
+SynCache::Cache is a thread-safe time-limited object cache with flexible
+replacement strategy.
+.SH "OPTIONS" 
+.IP "\fBURI\fP" 4
+A URI with druby: schema that the DRb server binds to, default is
+\fBdruby://localhost:9000\fP
+.IP "\fB--help\fP" 4
+Display usage information and quit.
+.IP "\fB--ttl\fP SECONDS" 4
+Time-to-live value for cache entries, default is 24 hours.
+.IP "\fB--size\fP ENTRIES" 4
+Maximum number of objects in cache, default is 10000.
+.IP "\fB--flush-delay\fP SECONDS" 4
+Rate-limit flush operations. If less than that number of seconds has passed
+since last flush, next flush will be delayed. Default is no rate limit.
+.IP "\fB--user\fP USER" 4
+Run as USER if started as root. Default is nobody.
+.IP "\fB--error-log\fP ERROR_LOG_PATH" 4
+File to write errors to. Default is /dev/null. When run as root,
+the file is chowned to USER:adm.
+.IP "\fB--pidfile\fP PATH" 4
+Path to pidfile. By default, pidfile is created under /var/run/syncache-drb/
+when run as root, or under $TMPDIR otherwise. Location should be writeable by
+USER.
+
+.SH "AUTHOR" 
+.PP 
+This manual page was written by Dmitry Borodaenko <angdraug@debian.org>.
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU GPL version 3 or later.
