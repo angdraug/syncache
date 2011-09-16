@@ -20,7 +20,7 @@ module Sync_m
   end
 end
 
-elsif RUBY_VERSION == "1.9.0"
+elsif RUBY_VERSION >= "1.9.0"
 
 module Sync_m
   def sync_try_lock(mode = EX)
@@ -32,5 +32,16 @@ module Sync_m
     ret
   end
 end
+
+class Object
+  remove_const :Sync
+  remove_const :Synchronizer
+end
+
+class Sync_c
+  include Sync_m
+end
+
+Synchronizer = Sync = Sync_c
 
 end
