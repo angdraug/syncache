@@ -1,0 +1,183 @@
+-----------------------------------------------------------------
+Revision: 8bc8efa1310743cf39e14bdf69d4429cadebcb61
+Ancestor: 6f9a39297f610f7095473ac34f68674963561d9c
+Author: angdraug@debian.org
+Date: 25/12/09 19:56:53
+Branch: syncache-head
+
+Modified files:
+        bin/syncache-drb man/syncache-drb.1
+
+ChangeLog: 
+
+man page updated for new options
+
+-----------------------------------------------------------------
+Revision: 6f9a39297f610f7095473ac34f68674963561d9c
+Ancestor: 57f2c6cd4fbe8a04750aebeff72b094dc4d24476
+Author: angdraug@debian.org
+Date: 25/12/09 19:46:42
+Branch: syncache-head
+
+Modified files:
+        bin/syncache-drb
+
+ChangeLog: 
+
+New options: --user, --error-log
+
+ * Redirect STDERR to an error log when specified.
+ * Allow to specify any to run as user instead of just nobody.
+ * Create the pidfile under /var/run/syncache-drb to solve the
+   undeletable pidfile problem.
+
+-----------------------------------------------------------------
+Revision: 57f2c6cd4fbe8a04750aebeff72b094dc4d24476
+Ancestor: 0b3852cfbf276589043a4bb87c37ab024df694cc
+Author: angdraug@debian.org
+Date: 26/10/09 20:08:45
+Branch: syncache-head
+
+Modified files:
+        bin/syncache-drb
+
+ChangeLog: 
+
+untaint URI supplied on command line; report exception backtraces to syslog
+
+-----------------------------------------------------------------
+Revision: 0b3852cfbf276589043a4bb87c37ab024df694cc
+Ancestor: 69d9bb2d250a211e52baab031e5f840032fdee74
+Author: angdraug@debian.org
+Date: 07/08/09 14:08:50
+Branch: syncache-head
+
+Modified files:
+        lib/syncache.rb lib/syncache_sync_patch.rb
+
+ChangeLog: 
+
+expand syncache_sync_patch to fix the same bug in Ruby 1.9.0, move RUBY_VERSION condition into the patch file
+
+-----------------------------------------------------------------
+Revision: 69d9bb2d250a211e52baab031e5f840032fdee74
+Ancestor: de7c67553a07c221dc2064cc19a64c32286c72ae
+Author: angdraug@debian.org
+Date: 28/07/09 17:45:55
+Branch: syncache-head
+
+Added files:
+        test/ts_syncache.rb
+Added directories:
+        test
+
+ChangeLog: 
+
+unit test re-added from Samizdat::Cache
+
+-----------------------------------------------------------------
+Revision: de7c67553a07c221dc2064cc19a64c32286c72ae
+Ancestor: f95d143aed0ae773800a96cafb4e1b9eb87cc407
+Author: angdraug@debian.org
+Date: 28/07/09 17:29:16
+Branch: syncache-head
+
+Modified files:
+        bin/syncache-drb
+
+ChangeLog: 
+
+fixes in handling of syncache-drb options
+
+-----------------------------------------------------------------
+Revision: f95d143aed0ae773800a96cafb4e1b9eb87cc407
+Ancestor: ed2cc574a6324a95a69f81c4a3ed3e04bd26ade4
+Author: angdraug@debian.org
+Date: 27/07/09 17:50:10
+Branch: syncache-head
+
+Modified files:
+        README.rdoc
+
+ChangeLog: 
+
+updated README.rdoc to reflect renamed DRb server script
+
+-----------------------------------------------------------------
+Revision: ed2cc574a6324a95a69f81c4a3ed3e04bd26ade4
+Ancestor: e9c480978fdb812474c40a785d7b4cae8aa77c58
+Author: angdraug@debian.org
+Date: 27/07/09 17:32:17
+Branch: syncache-head
+
+Renamed entries:
+        man/syncache-drb-server.1 to man/syncache-drb.1
+Modified files:
+        man/syncache-drb.1
+
+ChangeLog: 
+
+renamed the samizdat-drb-server.1 manpage along with the script
+
+-----------------------------------------------------------------
+Revision: e9c480978fdb812474c40a785d7b4cae8aa77c58
+Ancestor: e6c0480854ee7af7f7f9956d9c6489452ec99a65
+Author: angdraug@debian.org
+Date: 27/07/09 17:16:05
+Branch: syncache-head
+
+Renamed entries:
+        bin/syncache-drb-server to bin/syncache-drb
+Modified files:
+        bin/syncache-drb
+
+ChangeLog: 
+
+renamed syncache-drb-server to syncache-drb to make it fit within 15 character limit
+
+-----------------------------------------------------------------
+Revision: e6c0480854ee7af7f7f9956d9c6489452ec99a65
+Ancestor: 6818ae15675fa101beb33c7fc21635e404a09fbe
+Author: angdraug@debian.org
+Date: 27/07/09 16:37:53
+Branch: syncache-head
+
+Modified files:
+        lib/syncache.rb
+
+ChangeLog: 
+
+conditionally load monkey patch for the sync.rb bug only for Ruby versions < 1.8.7p173
+
+-----------------------------------------------------------------
+Revision: 6818ae15675fa101beb33c7fc21635e404a09fbe
+Ancestor: 56a8b045280179815127c312f703c55bc63d7081
+Author: angdraug@debian.org
+Date: 27/07/09 15:57:09
+Branch: syncache-head
+
+Modified files:
+        bin/syncache-drb-server
+
+ChangeLog: 
+
+fixed Samizdat legacy: cache -> @cache
+
+-----------------------------------------------------------------
+Revision: 56a8b045280179815127c312f703c55bc63d7081
+Ancestor: 
+Author: angdraug@debian.org
+Date: 27/07/09 15:40:15
+Branch: syncache-head
+
+Added files:
+        COPYING README.rdoc bin/syncache-drb-server lib/syncache.rb
+        lib/syncache_sync_patch.rb man/syncache-drb-server.1
+        setup.rb
+Added directories:
+        . bin lib man
+
+ChangeLog: 
+
+initial checkin: SynCache is a spin-off of cache.rb from Samizdat project
+
