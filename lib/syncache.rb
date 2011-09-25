@@ -16,6 +16,8 @@ module SynCache
 
 FOREVER = 60 * 60 * 24 * 365 * 5   # 5 years
 
+class CacheError < RuntimeError; end
+
 class CacheEntry
   def initialize(ttl = nil, value = nil)
     @value = value
@@ -100,7 +102,7 @@ class Cache
   # <tt>===</tt> operator) are removed
   #
   def flush(base = nil)
-    debug('flush ' << base.to_s)
+    debug { 'flush ' << base.to_s }
 
     @sync.synchronize do
 
@@ -123,7 +125,7 @@ class Cache
   # remove single value from cache
   #
   def delete(key)
-    debug('delete ' << key.to_s)
+    debug { 'delete ' << key.to_s }
 
     @sync.synchronize do
       @cache.delete(key)
@@ -135,13 +137,14 @@ class Cache
   # see also Cache#fetch_or_add
   #
   def []=(key, value)
-    debug('[]= ' << key.to_s)
+    debug { '[]= ' << key.to_s }
 
-    entry = get_entry(key)
-    entry.sync.synchronize do
-      entry.value = value
+    entry = get_locked_entry(key)
+    begin
+      return entry.value = value
+    ensure
+      entry.sync.unlock
     end
-    value
   end
 
   # retrieve value from cache if it's still fresh
@@ -149,11 +152,15 @@ class Cache
   # see also Cache#fetch_or_add
   #
   def [](key)
-    debug('[] ' << key.to_s)
+    debug { '[] ' << key.to_s }
 
-    entry = get_entry(key)
-    entry.sync.synchronize(:SH) do
-      entry.value
+    entry = get_locked_entry(key, false)
+    unless entry.nil?
+      begin
+        return entry.value
+      ensure
+        entry.sync.unlock
+      end
     end
   end
 
@@ -164,21 +171,14 @@ class Cache
   # parallel execution of resource-intensive actions
   #
   def fetch_or_add(key)
-    debug('fetch_or_add ' << key.to_s)
+    debug { 'fetch_or_add ' << key.to_s }
 
-    entry = nil   # scope fix
-    entry_locked = false
-    until entry_locked do
-      @sync.synchronize do
-        entry = get_entry(key)
-        entry_locked = entry.sync.try_lock   # fixme
-      end
-      sleep(rand * LOCK_SLEEP) unless entry_locked
-    end
-
+    entry = get_locked_entry(key)
     begin
-      entry.record_access
-      entry.value ||= yield
+      if entry.value.nil?
+        entry.value = yield
+      end
+      return entry.value
     ensure
       entry.sync.unlock
     end
@@ -209,30 +209,47 @@ class Cache
     end
   end
 
-  def get_entry(key)
-    debug('get_entry ' << key.to_s)
+  def add_blank_entry(key)
+    @sync.sync_exclusive? or raise CacheError,
+      'add_entry called while @sync is not locked'
 
-    @sync.synchronize do
-      entry = @cache[key]
+    had_same_key = @cache.has_key?(key)
+    entry = @cache[key] = CacheEntry.new(@ttl)
+    check_size unless had_same_key
+    entry
+  end
 
-      if entry.kind_of?(CacheEntry)
-        if entry.stale?
-          @cache[key] = entry = CacheEntry.new(@ttl)
+  def get_locked_entry(key, add_if_missing=true)
+    debug { "get_locked_entry #{key}, #{add_if_missing}" }
+
+    entry = nil   # scope fix
+    entry_locked = false
+    until entry_locked do
+      @sync.synchronize do
+        entry = @cache[key]
+
+        if entry.nil? or entry.stale?
+          if add_if_missing
+            entry = add_blank_entry(key)
+          else
+            @cache.delete(key) unless entry.nil?
+            return nil
+          end
         end
-      else
-        @cache[key] = entry = CacheEntry.new(@ttl)
-        check_size
-      end
 
-      entry.record_access
-      entry
+        entry_locked = entry.sync.try_lock
+      end
+      sleep(rand * LOCK_SLEEP) unless entry_locked
     end
+
+    entry.record_access
+    entry
   end
 
   # remove oldest item from cache if size limit reached
   #
   def check_size
-    debug('check_size')
+    debug { 'check_size' }
 
     return unless @max_size.kind_of? Numeric
 
@@ -248,9 +265,9 @@ class Cache
 
   # send debug output to syslog if enabled
   #
-  def debug(message)
+  def debug
     if DEBUG and defined?(Syslog) and Syslog.opened?
-      Syslog.debug(Thread.current.to_s << ' ' << message)
+      Syslog.debug(Thread.current.to_s << ' ' << yield)
     end
   end
 end
