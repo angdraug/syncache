@@ -42,8 +42,8 @@ overriding its #replacement_index method.
 Cache entries are automatically invalidated when their +ttl+ (time to
 live) is exceeded. Entries can be explicitly invalidated by #flush
 method. The method can use <tt>===</tt> operator to compare cache keys
-against flush base (so that base can be e.g. a Regexp), and invalidates
-all entries when invoked without the +base+ parameter.
+against flush base (so that base can be e.g. a Regexp). When invoked
+without the +base+ parameter, it invalidates all entries.
 
 The +flush_delay+ initialization option allows to limit cache's flush
 rate. When this option is set, SynCache will make sure that at least
@@ -70,10 +70,28 @@ To access a remote cache, you will need to use DRb library:
   # allow remote cache to access local objects from fetch_or_add blocks
   DRb.start_service('druby://localhost:0')
 
+For the above to work properly, all your fetch_or_add blocks should be
+thread-safe, because DRb will run them in their own threads. Also, if a
+Ruby process crashes is the middle of such block, the key will remain
+locked in the remote cache until its +ttl+ runs out.
+
+To work around these limitations, you can wrap access to a remote cache
+using a SynCache::RemoteCache object:
+
+  require 'syncache'
+
+  # connect to the remote cache
+  @cache = SynCache::RemoteCache.new('druby://localhost:9000')
+
+SynCache::RemoteCache implements its own version of fetch_or_add that
+runs the supplied block locally in the current thread and would give up
+and take over a locked key if the client that originally locked it takes
+too long to free it up.
+
 
 == Copying
 
-  Copyright (c) 2002-2009  Dmitry Borodaenko <angdraug@debian.org>
+  Copyright (c) 2002-2011  Dmitry Borodaenko <angdraug@debian.org>
 
   This program is free software.
   You can distribute/modify this program under the terms of the GNU
