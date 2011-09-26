@@ -10,7 +10,7 @@
 # vim: et sw=2 sts=2 ts=8 tw=0
 
 require 'sync'
-require 'syncache_sync_patch'
+require 'syncache/syncache_sync_patch'
 
 module SynCache
 
