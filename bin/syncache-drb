@@ -96,7 +96,7 @@ Options:
       when '--error-log'
         @error_log = arg.dup.untaint
       when '--pidfile'
-        @pidfile = arg
+        @pidfile = arg.dup.untaint
       end
     end
 
