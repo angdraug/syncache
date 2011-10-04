@@ -155,7 +155,7 @@ Options:
     Signal.trap('TERM', shutdown)
     Signal.trap('HUP') do   # kill -HUP to flush cache
       @cache.flush
-      log.info 'cache flushed'
+      log 'cache flushed'
     end
   end
 
