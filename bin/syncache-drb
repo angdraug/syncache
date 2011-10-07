@@ -159,7 +159,10 @@ Options:
 
   def trap_signals
     shutdown = lambda do |sig|
-      DRb.stop_service
+      Thread.new do
+        sleep 0.1
+        DRb.stop_service
+      end
     end
     Signal.trap('INT', shutdown)
     Signal.trap('TERM', shutdown)
