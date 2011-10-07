@@ -148,12 +148,12 @@ Options:
   end
 
   def trap_signals
-    shutdown = lambda do
+    shutdown = lambda do |sig|
       DRb.stop_service
     end
     Signal.trap('INT', shutdown)
     Signal.trap('TERM', shutdown)
-    Signal.trap('HUP') do   # kill -HUP to flush cache
+    Signal.trap('HUP') do |sig|   # kill -HUP to flush cache
       @cache.flush
       log 'cache flushed'
     end
