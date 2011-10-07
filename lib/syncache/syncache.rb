@@ -66,10 +66,6 @@ end
 
 class Cache
 
-  # set to _true_ to report every single cache operation to syslog
-  #
-  DEBUG = false
-
   # a float number of seconds to sleep when a race condition is detected
   # (actual delay is randomized to avoid live lock situation)
   #
@@ -87,6 +83,7 @@ class Cache
   def initialize(ttl = 60*60, max_size = 5000, flush_delay = nil)
     @ttl = ttl
     @max_size = max_size
+    @debug = false
 
     if @flush_delay = flush_delay
       @last_flush = Time.now
@@ -95,6 +92,10 @@ class Cache
     @sync = Sync.new
     @cache = {}
   end
+
+  # set to _true_ to report every single cache operation
+  #
+  attr_accessor :debug
 
   # remove all values from cache
   #
@@ -266,8 +267,13 @@ class Cache
   # send debug output to syslog if enabled
   #
   def debug
-    if DEBUG and defined?(Syslog) and Syslog.opened?
-      Syslog.debug(Thread.current.to_s << ' ' << yield)
+    return unless @debug
+    message = Thread.current.to_s + ' ' + yield
+    if defined?(Syslog) and Syslog.opened?
+      Syslog.debug(message)
+    else
+      STDERR << 'syncache: ' + message + "\n"
+      STDERR.flush
     end
   end
 end

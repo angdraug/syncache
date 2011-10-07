@@ -51,6 +51,10 @@ Options:
       File to write errors to. Default is /dev/null. When run as root,
       the file is chowned to USER:adm.
 
+  --debug
+      Enable debug mode. If an error log is specified with --error-log,
+      all messages will be sent there instead of syslog.
+
   --pidfile PATH
       Path to the pidfile. By default, pidfile is created under
       /var/run/#{PNAME}/ when run as root, or under $TMPDIR
@@ -68,6 +72,7 @@ Options:
       [ '--flush-delay', '-f', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--user', '-u', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--error-log', '-e', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--debug', '-d', GetoptLong::NO_ARGUMENT ],
       [ '--pidfile', '-p', GetoptLong::REQUIRED_ARGUMENT ]
     )
 
@@ -77,6 +82,7 @@ Options:
     @flush_delay = nil
     @user = 'nobody'
     @error_log = '/dev/null'
+    @debug = false
     @pidfile = (0 == Process.uid) ?
       "/var/run/#{PNAME}/#{PNAME}.pid" :
       (ENV.has_key?('TMPDIR') ? ENV['TMPDIR'] : '/tmp') + "/#{PNAME}.pid"
@@ -95,6 +101,8 @@ Options:
         @user = arg.dup.untaint
       when '--error-log'
         @error_log = arg.dup.untaint
+      when '--debug'
+        @debug = true
       when '--pidfile'
         @pidfile = arg.dup.untaint
       end
@@ -108,7 +116,8 @@ Options:
     if @log.respond_to? level
       @log.send(level, message)
     else
-      STDERR << message << "\n"
+      STDERR << 'syncache: ' + message + "\n"
+      STDERR.flush
     end
   end
 
@@ -145,6 +154,7 @@ Options:
 
   def ready
     @cache = SynCache::Cache.new(@ttl, @size, @flush_delay)   # initialize cache
+    @cache.debug = true if @debug
   end
 
   def trap_signals
@@ -174,7 +184,7 @@ Options:
   def run
     set_options
     daemonize
-    open_syslog
+    open_syslog unless @debug and @error_log
     begin
       ready
       trap_signals

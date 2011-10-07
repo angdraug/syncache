@@ -29,6 +29,9 @@ Run as USER if started as root. Default is nobody.
 .IP "\fB--error-log\fP ERROR_LOG_PATH" 4
 File to write errors to. Default is /dev/null. When run as root,
 the file is chowned to USER:adm.
+.IP "\fB--debug\fP" 4
+Enable debug mode. If an error log is specified with --error-log, all
+messages will be sent there instead of syslog.
 .IP "\fB--pidfile\fP PATH" 4
 Path to pidfile. By default, pidfile is created under /var/run/syncache-drb/
 when run as root, or under $TMPDIR otherwise. Location should be writeable by
