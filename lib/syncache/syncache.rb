@@ -9,9 +9,6 @@
 #
 # vim: et sw=2 sts=2 ts=8 tw=0
 
-require 'sync'
-require 'syncache/syncache_sync_patch'
-
 module SynCache
 
 FOREVER = 60 * 60 * 24 * 365 * 5   # 5 years
@@ -25,7 +22,7 @@ class CacheEntry
     @dirty = false
     record_access
 
-    @sync = Sync.new
+    @sync = Mutex.new
   end
 
   # stores the value object
@@ -89,7 +86,7 @@ class Cache
       @last_flush = Time.now
     end
 
-    @sync = Sync.new
+    @sync = Mutex.new
     @cache = {}
   end
 
@@ -211,7 +208,7 @@ class Cache
   end
 
   def add_blank_entry(key)
-    @sync.sync_exclusive? or raise CacheError,
+    @sync.locked? or raise CacheError,
       'add_entry called while @sync is not locked'
 
     had_same_key = @cache.has_key?(key)
@@ -254,13 +251,18 @@ class Cache
 
     return unless @max_size.kind_of? Numeric
 
-    @sync.synchronize do
-      while @cache.size > @max_size do
-        # optimize: supplement hash with queue
-        oldest = @cache.keys.min {|a, b| @cache[a].replacement_index <=> @cache[b].replacement_index }
+    if @sync.locked?
+      check_size_internal
+    else
+      @sync.synchronize { check_size_internal }
+    end
+  end
 
-        @cache.delete(oldest)
-      end
+  def check_size_internal
+    while @cache.size > @max_size do
+      # optimize: supplement hash with queue
+      oldest = @cache.keys.min {|a, b| @cache[a].replacement_index <=> @cache[b].replacement_index }
+      @cache.delete(oldest)
     end
   end
 
