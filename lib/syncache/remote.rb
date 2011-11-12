@@ -45,12 +45,15 @@ end
 # Mixing access to the same cache entries from direct and RemoteCache clients
 # is not recommended.
 #
-class RemoteCache < SimpleDelegator
+class RemoteCache
   def initialize(uri, timeout=REMOTE_TIMEOUT, first_delay=REMOTE_FIRST_DELAY)
     @timeout = timeout
     @first_delay = first_delay
     @cache = DRbObject.new_with_uri(uri)
-    super @cache
+  end
+
+  def method_missing(method, *args)
+    @cache.send(method, *args)
   end
 
   def fetch_or_add(key)
