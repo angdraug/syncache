@@ -19,6 +19,7 @@ two-level locking mechanism which ensures that:
    returned to all threads.
     EOF
   spec.files       = `git ls-files`.split "\n"
+  spec.test_files  = Dir['test/ts_*.rb']
   spec.executables = spec.files.map{|p| p =~ /^bin\/(.*)/ ? $1 : nil }.compact
   spec.license     = 'GPL3+'
 end
