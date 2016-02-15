@@ -160,15 +160,18 @@ Options:
   def trap_signals
     shutdown = lambda do |sig|
       Thread.new do
-        sleep 0.1
+        sleep 0.01
         DRb.stop_service
       end
     end
     Signal.trap('INT', shutdown)
     Signal.trap('TERM', shutdown)
     Signal.trap('HUP') do |sig|   # kill -HUP to flush cache
-      @cache.flush
-      log 'cache flushed'
+      Thread.new do
+        sleep 0.01
+        @cache.flush
+        log 'cache flushed'
+      end
     end
   end
 
