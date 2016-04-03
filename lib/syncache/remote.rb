@@ -74,9 +74,9 @@ class RemoteCache
         value = @cache[key]
       end
 
-      if value.kind_of?(Placeholder)
-        # ran out of time: give up and do it ourselves
-        @cache.delete(key)
+      if value.kind_of?(Placeholder) or value.nil?
+        # the other client timed out or got flushed;
+        # reset the placeholder ttl and do it ourselves
         @cache[key] = Placeholder.new
         value = @cache[key] = yield
       end
