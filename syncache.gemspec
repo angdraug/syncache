@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name        = 'syncache'
-  spec.version     = '1.3'
+  spec.version     = '1.4'
   spec.author      = 'Dmitry Borodaenko'
   spec.email       = 'angdraug@debian.org'
   spec.homepage    = 'https://github.com/angdraug/syncache'
