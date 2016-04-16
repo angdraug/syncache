@@ -28,7 +28,7 @@ Options:
 
   URI
       URI with druby: schema that DRb server binds to, default is
-      druby://localhost:9000
+      druby://*:9000
 
   --help
       display this message and quit
@@ -81,7 +81,7 @@ Options:
       [ '--foreground', GetoptLong::NO_ARGUMENT ]
     )
 
-    @uri = 'druby://localhost:9000'
+    @uri = 'druby://*:9000'
     @ttl = 24*60*60
     @size = 10000
     @flush_delay = nil
