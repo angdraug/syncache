@@ -18,8 +18,10 @@ two-level locking mechanism which ensures that:
    and as soon as the first thread completes the operation, the result will be
    returned to all threads.
     EOF
-  spec.files       = `git ls-files`.split "\n"
+  spec.files       = %w(COPYING ChangeLog.mtn README.rdoc setup.rb Rakefile
+                        syncache.gemspec bin/syncache-drb man/syncache-drb.1) +
+                     Dir['{lib,test}/**/*.rb']
   spec.test_files  = Dir['test/ts_*.rb']
   spec.executables = spec.files.map{|p| p =~ /^bin\/(.*)/ ? $1 : nil }.compact
-  spec.license     = 'GPL3+'
+  spec.license     = 'GPL-3.0+'
 end
