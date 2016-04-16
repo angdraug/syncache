@@ -14,7 +14,7 @@ replacement strategy.
 .SH "OPTIONS" 
 .IP "\fBURI\fP" 4
 A URI with druby: schema that the DRb server binds to, default is
-\fBdruby://localhost:9000\fP
+\fBdruby://*:9000\fP
 .IP "\fB--help\fP" 4
 Display usage information and quit.
 .IP "\fB--ttl\fP SECONDS" 4
@@ -36,6 +36,9 @@ messages will be sent there instead of syslog.
 Path to pidfile. By default, pidfile is created under /var/run/syncache-drb/
 when run as root, or under $TMPDIR otherwise. Location should be writeable by
 USER.
+.IP "\fB--foreground\fP" 4
+Do not daemonize, switch to a different user, create pidfile, redirect output,
+or log to syslog.
 
 .SH "AUTHOR" 
 .PP 
