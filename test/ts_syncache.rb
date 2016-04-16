@@ -10,6 +10,5 @@
 #
 # vim: et sw=2 sts=2 ts=8 tw=0
 
-require 'test/unit'
 require 'test/tc_syncache'
 require 'test/tc_remote'
