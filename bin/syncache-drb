@@ -90,7 +90,8 @@ Options:
     @debug = false
     @pidfile = (0 == Process.uid) ?
       "/var/run/#{PNAME}/#{PNAME}.pid" :
-      (ENV.has_key?('TMPDIR') ? ENV['TMPDIR'] : '/tmp') + "/#{PNAME}.pid"
+      File.join((ENV.has_key?('TMPDIR') ? ENV['TMPDIR'].dup.untaint : '/tmp'),
+                "#{PNAME}.pid")
     @foreground = false
 
     opts.each do |opt, arg|
@@ -191,7 +192,7 @@ Options:
 
   def wait_for_shutdown
     DRb.thread.join
-    File.delete @pidfile
+    File.delete @pidfile unless @foreground
     log 'shut down'
   end
 
