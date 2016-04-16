@@ -60,6 +60,10 @@ Options:
       /var/run/#{PNAME}/ when run as root, or under $TMPDIR
       otherwise. Location should be writeable by USER.
 
+  --foreground
+      Do not daemonize, switch to a different user, create pidfile,
+      redirect output, or log to syslog.
+
 }
     exit
   end
@@ -73,7 +77,8 @@ Options:
       [ '--user', '-u', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--error-log', '-e', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--debug', '-d', GetoptLong::NO_ARGUMENT ],
-      [ '--pidfile', '-p', GetoptLong::REQUIRED_ARGUMENT ]
+      [ '--pidfile', '-p', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--foreground', GetoptLong::NO_ARGUMENT ]
     )
 
     @uri = 'druby://localhost:9000'
@@ -86,6 +91,7 @@ Options:
     @pidfile = (0 == Process.uid) ?
       "/var/run/#{PNAME}/#{PNAME}.pid" :
       (ENV.has_key?('TMPDIR') ? ENV['TMPDIR'] : '/tmp') + "/#{PNAME}.pid"
+    @foreground = false
 
     opts.each do |opt, arg|
       case opt
@@ -105,6 +111,8 @@ Options:
         @debug = true
       when '--pidfile'
         @pidfile = arg.dup.untaint
+      when '--foreground'
+        @foreground = true
       end
     end
 
@@ -189,8 +197,10 @@ Options:
 
   def run
     set_options
-    daemonize
-    open_syslog unless @debug and @error_log
+    unless @foreground
+      daemonize
+      open_syslog unless @debug and @error_log
+    end
     begin
       ready
       trap_signals
